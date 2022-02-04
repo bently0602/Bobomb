@@ -1,0 +1,105 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Bobomb</title>
+</head>
+<body>
+<script type="module">
+
+import Bobomb from './Bobomb.js';
+
+Bobomb.ns('BobombTest').test = true;
+
+Bobomb.ns('BobombTest.TestClasses').TestCls = class {
+	constructor(test) {
+		this.fromTestClass = true;
+		this.test = test;
+	}
+};
+
+Bobomb.ns('BobombTest.TestClasses').TestClsB = class extends Bobomb.ns('BobombTest.TestClasses').TestCls {
+	constructor(test) {
+		super();
+		this.fromTestClassB = true;
+		this.test = test;
+	}
+};
+
+console.log(Bobomb.ns('BobombTest'));
+
+var ns = new (Bobomb.ns('BobombTest.TestClasses')).TestClsB();
+
+//console.log(ns)
+let testing = true;
+var p = Bobomb.create('BobombTest.TestClasses.TestClsB', {test: 'test'});
+console.log(p);
+
+var p2 = new BobombTest.TestClasses.TestClsB({test: 'test'});
+console.log(p2)
+
+var spec = {
+	test: true
+};
+var spec2 = Bobomb.extend(spec, { test: false, testB: true });
+console.log(spec, spec2);
+
+/////
+
+Bobomb.create('Bobomb.Components.Component', {
+	id: 'main',
+	style: 'padding: 20px; border: 1px solid black;',
+	items: [
+		{
+			id: 'first',
+			html: 'TEST',
+			style: 'color: red;'
+		}, {
+			id: 'second-container',
+			items: [
+				{
+					style: {
+						"font-size": '24px'
+					},
+					html: 'Hello from Bobomb!'
+				}
+			]
+		}, {
+			id: 'sub-main',
+			items: [
+				{
+					id: 'sub-main-child',
+					tagName: 'button',
+					html: 'Hey!',
+					style: {
+						color: 'blue',
+						cursor: 'pointer'
+					},
+					listeners: {
+						click: function() {
+							this.setStyle({
+								color: 'red',
+							});
+							var t = this
+									.up('#main')
+									.down('#second-container')
+									.down();
+							if (t) {
+								t.update('Hello from Bobomb again!')
+									.setStyle({
+										color: 'purple'
+									}, true);
+							}
+						}
+					}
+				}
+			]
+		}
+	]
+}).renderTo(document.querySelector('body'));
+
+</script>
+</body>
+</html>
