@@ -251,9 +251,6 @@ Bobomb.ns('Bobomb.Components')['Component'] = class {
 
 		this.id = spec.id ?? Bobomb['generateUUID']();
 		delete spec.id;
-
-		this.html = spec.html ?? '';
-		delete spec.html;
 		
 		this.layout = spec.layout ?? (() => { return null });
 		delete spec.layout;
@@ -305,11 +302,23 @@ Bobomb.ns('Bobomb.Components')['Component'] = class {
 				i.ownerCt = this;
 				i.renderTo(this.el);
 			});
-		} else {
+		} else if (spec.html) {
+			this.html = spec.html ?? '';
+			delete spec.html;
+			
 			if (Bobomb['isFunction'](this.html)) {
 				this.el.innerHTML = this.html();
 			} else {
 				this.el.innerHTML = this.html;
+			}
+		} else if (spec.text) {
+			this.text = spec.text ?? '';
+			delete spec.text;
+			
+			if (Bobomb['isFunction'](this.text)) {
+				this.el.textContent = this.text();
+			} else {
+				this.el.textContent = this.text;
 			}
 		}
 		delete spec.items;
@@ -423,7 +432,7 @@ Bobomb.ns('Bobomb.Components')['Component'] = class {
 		}
 
 		if (this.eventListenersStore[eventSpec.eventName][eventSpec.eventAddedTS]) {
-			if (!eventName.startsWith('_')) {
+			if (!eventSpec.eventName.startsWith('_')) {
 				this.el.removeEventListener(
 					eventSpec.eventName, 
 					this.eventListenersStore[eventSpec.eventName][eventSpec.eventAddedTS], 
@@ -544,7 +553,7 @@ Bobomb.ns('Bobomb.Components')['Component'] = class {
 	}
 
 	getID() {
-		return this.id;
+		return this.el.getAttribute('id');
 	}
 
 	// get the direct parent of this component (shorthand method)
