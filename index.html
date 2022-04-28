@@ -40,20 +40,27 @@ var p = Bobomb.create('BobombTest.TestClasses.TestClsB', {test: 'test'});
 console.log(p);
 
 var p2 = new BobombTest.TestClasses.TestClsB({test: 'test'});
-console.log(p2)
+console.log(p2);
 
 var spec = {
 	test: true
 };
-var spec2 = Bobomb.extend(spec, { test: false, testB: true });
-console.log(spec, spec2);
+var spec2 = {
+	test: false, 
+	testB: true
+};
+var spec3 = {
+	test: true
+};
+var extendResult = Bobomb.extend(spec, spec2, spec3);
+console.log('spec', spec, 'spec2', spec2, 'spec3', spec3, 'extendResult', extendResult);
 
 // layout/component/xtype tests
 var mainCmp = Bobomb.create('Bobomb.Components.Component', {
 	id: 'main',
 	style: 'padding: 20px; border: 1px solid black;',
 	cls: '',
-	// defaults apply to any items components defined through xtypes
+	// defaults apply to any items components defined through xtypes (ones that are not created yet)
 	defaults: {
 		//html: 'aaa'
 	},
@@ -117,7 +124,16 @@ var mainCmp = Bobomb.create('Bobomb.Components.Component', {
 			]
 		}, {
 			tagName: 'button',
+			// put content as textContent instead of html
+			// then demonstrate still having an attribute name
+			// 'text' by putting in attrs object instead
+			// of just dynamically pulling from spec, just in
+			// case some spec."" overlaps a html element
+			// attribute name
 			text: 'Destroy Everything In This Panel!',
+			attrs: {
+				text: 'testing that this in the attributes'	
+			},
 			listeners: {
 				click: function(cmp) {
 					mainCmp.destroy();

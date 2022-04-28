@@ -46,6 +46,7 @@ Bobomb['clone'] = function(x) {
 	return Object.assign({}, x);
 };
 
+// merge objects, left to right
 Bobomb['extend'] = function(x, ...args) {
 	var z = Bobomb['clone'](x);
 	// https://stackoverflow.com/questions/171251/how-can-i-merge-properties-of-two-javascript-objects-dynamically
@@ -304,7 +305,6 @@ Bobomb.ns('Bobomb.Components')['Component'] = class {
 			});
 		} else if (spec.html) {
 			this.html = spec.html ?? '';
-			delete spec.html;
 			
 			if (Bobomb['isFunction'](this.html)) {
 				this.el.innerHTML = this.html();
@@ -313,7 +313,6 @@ Bobomb.ns('Bobomb.Components')['Component'] = class {
 			}
 		} else if (spec.text) {
 			this.text = spec.text ?? '';
-			delete spec.text;
 			
 			if (Bobomb['isFunction'](this.text)) {
 				this.el.textContent = this.text();
@@ -321,8 +320,11 @@ Bobomb.ns('Bobomb.Components')['Component'] = class {
 				this.el.textContent = this.text;
 			}
 		}
+		delete spec.html;
+		delete spec.text;
 		delete spec.items;
-
+		delete spec.defaults;
+		
 		// listeners
 		this.listeners = spec.listeners ?? { };
 		this.eventListenersStore = { };
@@ -347,19 +349,21 @@ Bobomb.ns('Bobomb.Components')['Component'] = class {
 		//
 		// any other dynamic attrs
 		//
-		Object.entries(spec).forEach(i => {
+		var attrs = Bobomb['extend'](spec, spec.attrs ?? {});
+		delete attrs.attrs; // from spec.attrs
+		Object.entries(attrs).forEach(i => {
 			var [key, value] = i;
 
 			// cleanup any JS reserved words
 			//	- cls is handled above but put it here for reminding
-			if (key === 'cls') { key = 'class'; }
+			//if (key === 'cls') { key = 'class'; }
 
 			// filter out defaults object
-			if (key != 'defaults') {
-				try {
-					this.el.setAttribute(key.toString().trim(), value.toString().trim());
-				} catch(e) { console.log(e,key,value); }
-			}
+			//if (key != 'defaults') {
+			try {
+				this.el.setAttribute(key.toString().trim(), value.toString().trim());
+			} catch(e) { console.log(e,key,value); }
+			//}
 		});
 		
 		this.emitEvent('_render');
