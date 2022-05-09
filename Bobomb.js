@@ -55,44 +55,6 @@ Bobomb['extend'] = function(x, ...args) {
 };
 Bobomb['merge'] = Bobomb['extend'];
 
-Bobomb['watch'] = function(obj, cb) {
-	// https://davidwalsh.name/watch-object-changes
-	// https://stackoverflow.com/questions/42747189/how-to-watch-complex-objects-and-their-changes-in-javascript
-    // we use unique field to determine if object is proxy
-    // we can't test this otherwise because typeof and
-    // instanceof is used on original object
-    if (obj && obj.__proxy__) {
-         return obj;
-    }
-
-    var proxy = new Proxy(obj, {
-        get: function(obj, name) {
-            if (name == '__proxy__') {
-                return true;
-            }
-            return obj[name];
-        },
-        set: function(obj, name, value) {
-            var old = obj[name];
-            if (value && typeof value == 'object') {
-                // new object need to be proxified as well
-                value = proxify(value, change);
-            }
-            obj[name] = value;
-            change(obj, name, old, value);
-        }
-    });
-
-    for (var prop in obj) {
-        if (obj.hasOwnProperty(prop) && obj[prop] &&
-            typeof obj[prop] == 'object') {
-            // proxify all child objects
-            obj[prop] = proxify(obj[prop], change);
-        }
-    }
-    return proxy;
-};
-
 // https://stackoverflow.com/questions/384286/how-do-you-check-if-a-javascript-object-is-a-dom-object?page=1&tab=votes#tab-top
 Bobomb['isElement'] = function(el) {
     return el instanceof Element || el instanceof HTMLDocument;  
@@ -105,6 +67,10 @@ Bobomb['isFunction'] = function(functionToCheck) {
 
 Bobomb['isString'] = function(str) {
 	return typeof str === 'string' || str instanceof String;
+};
+
+Bobomb['isNumber'] = function(val) {
+	return typeof val === 'number' && isFinite(val);
 };
 
 //https://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid
@@ -143,7 +109,10 @@ Bobomb['styleSpecToString'] = function(spec) {
 
 	var style = [];
 	Object.entries(spec).forEach(i => {
-		const [key, value] = i;
+		let [key, value] = i;
+		if (Bobomb['isNumber'](value)) {
+			value = `${value}px`;
+		}
 		style.push(`${Bobomb['camelCaseToKabob'](key)}: ${value}`)
 	});
 
@@ -197,6 +166,8 @@ Bobomb['componentStore'] = {
 	}
 };
 Bobomb['getComponent'] = Bobomb['componentStore']['get'];
+Bobomb['getCmp'] = Bobomb['componentStore']['get'];
+Bobomb['get'] = Bobomb['componentStore']['get'];
 
 Bobomb.ns('Bobomb.AJAX')['request'] = function(spec) {
 	var fetchSpec = {};
@@ -291,10 +262,10 @@ Bobomb.ns('Bobomb.Components')['Component'] = class {
 			spec.items.forEach(i => {
 				// check if bobomb already registered/created
 				if (!i._isBobombManaged) {
-					var targetType = i.xtype ?? 'component';
-					// uppercase the first letter in "xtype"
+					var targetType = i.baseType ?? 'component';
+					// uppercase the first letter in "baseType"
 					targetType = targetType[0].toUpperCase() + targetType.toLowerCase().slice(1);
-					delete i.xtype;
+					delete i.targetType;
 					// apply any defaults if needed
 					i = Bobomb['extend'](i, spec.defaults ?? { });
 					// create and reassign 'i'
@@ -338,13 +309,6 @@ Bobomb.ns('Bobomb.Components')['Component'] = class {
 		// data binding
 		// TODO: further work here
 		// https://johnresig.com/blog/javascript-micro-templating/#postcomment
-		/*if (spec.data) {
-			//console.log(spec.data)
-			Bobomb['watch'](spec.data, function() {
-
-			});
-		}
-		delete spec.data;*/
 
 		//
 		// any other dynamic attrs
@@ -461,16 +425,46 @@ Bobomb.ns('Bobomb.Components')['Component'] = class {
 	}
 
 	// render component to an element
-	renderTo(targetEl) {
+	renderTo(targetEl, idx) {
 		this.emitEvent('_beforelayout');
 		
 		if (Bobomb['isString'](targetEl)) {
 			targetEl = document.querySelector(targetEl);
 		}
 
-		if (targetEl) {
-			targetEl.appendChild(this.el);
+		if (!targetEl) {
+			throw `no element to render to!`;
 		}
+
+		if (Bobomb['isString'](idx)) {
+			idx = idx * 1;
+		}
+		
+		if (!idx) {
+			idx = targetEl.children.length + 1;
+		}
+
+		if (idx > targetEl.children.length) {
+			idx = targetEl.children.length;
+		}
+		if (idx < 0) {
+			idx = 0;
+		}
+		
+		targetEl.insertBefore(this.el, targetEl.children.item(idx + 1));
+		
+		// if (idx) {
+		// 	if (Bobomb['isString'](idx)) {
+		// 		idx = idx * 1;
+		// 	}
+		// 	
+		// 	//console.log(targetEl, targetEl.children, targetEl.children.item(idx + 1), idx)
+		// 	targetEl.insertBefore(this.el, targetEl.children.item(idx + 1));
+		// 	//const parentElement = targetEl.parentElement;
+		// 	//parentElement.insertBefore(this.el, parentElement.children[idx]);
+		// } else {
+		// 	targetEl.appendChild(this.el);
+		// }
 
 		this.emitEvent('_layout');
 		return this;
@@ -508,8 +502,8 @@ Bobomb.ns('Bobomb.Components')['Component'] = class {
 
 	// get style of component
 	getStyle() {
-		var t = this.el.getAttribute('style');
-		var res = { };
+		const t = this.el.getAttribute('style');
+		let res = { };
 		t.split(';').forEach(i => {
 			if (i.trim() != '') {
 				var x = i.split(':');
@@ -542,6 +536,7 @@ Bobomb.ns('Bobomb.Components')['Component'] = class {
 	// select a parent of this component
 	up(targetElSelector) {
 		if (!targetElSelector) { return this.ownerCt; }
+		
 		var upEl = this.el.closest(targetElSelector);
 
 		if (upEl) {
@@ -593,7 +588,7 @@ Bobomb.ns('Bobomb.Components')['Component'] = class {
 		Bobomb['componentStore'].remove(this.id);
 	}
 	
-	addComponents(spec) {
+	addComponents(spec, idx) {
 		if (!Array.isArray(spec)) {
 			spec = [spec];
 		}
@@ -605,12 +600,12 @@ Bobomb.ns('Bobomb.Components')['Component'] = class {
 				targetType = targetType[0].toUpperCase() + targetType.toLowerCase().slice(1);
 				delete i.xtype;
 				// apply any defaults if needed
-				i = Bobomb['extend'](i, /*spec.defaults ??*/ { });
+				i = Bobomb['extend'](i, spec.defaults ?? { });
 				// create and reassign 'i'
 				i = Bobomb['create'](`Bobomb.Components.${targetType}`, i);
 			} 
 			i.ownerCt = this;
-			i.renderTo(this.el);			
+			i.renderTo(this.el, idx);			
 		});
 	}
 };

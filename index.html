@@ -1,210 +1,92 @@
 <!doctype html>
 
-<html lang="en">
+<html lang="en" class="sl-theme-dark">
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>Bobomb</title>
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.0.0-beta.73/dist/themes/dark.css" />
+	<script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.0.0-beta.73/dist/shoelace.js"></script>
+	<style>
+	html, body {
+		padding: 0;
+		margin: 0;
+		background-color: rgb(26, 26, 30);
+		color: rgb(232, 232, 236);
+		
+		box-sizing: border-box;
+		font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+		font-size: 16px;
+		font-weight: 400;
+		letter-spacing: normal;
+		line-height: 28.8px;
+		-moz-osx-font-smoothing: grayscale;
+		-moz-text-size-adjust: none;
+	}
+	</style>
 </head>
 <body>
+<main></main>
+
 <script type="module">
-// import test
 import Bobomb from './Bobomb.js';
 
-// namespace tests
-Bobomb.ns('BobombTest').test = true;
-
-Bobomb.ns('BobombTest.TestClasses').TestCls = class {
-	constructor(test) {
-		this.fromTestClass = true;
-		this.test = test;
-	}
-};
-
-Bobomb.ns('BobombTest.TestClasses').TestClsB = 
-	class extends Bobomb.ns('BobombTest.TestClasses').TestCls {
-		constructor(test) {
-			super();
-			this.fromTestClassB = true;
-			this.test = test;
-		}
-	};
-
-console.log(Bobomb.ns('BobombTest'));
-
-var ns = new (Bobomb.ns('BobombTest.TestClasses')).TestClsB();
-console.log(ns);
-
-// class/inheritance tests
-var p = Bobomb.create('BobombTest.TestClasses.TestClsB', {test: 'test'});
-console.log(p);
-
-var p2 = new BobombTest.TestClasses.TestClsB({test: 'test'});
-console.log(p2);
-
-var spec = {
-	test: true
-};
-var spec2 = {
-	test: false, 
-	testB: true
-};
-var spec3 = {
-	test: true
-};
-var extendResult = Bobomb.extend(spec, spec2, spec3);
-console.log('spec', spec, 'spec2', spec2, 'spec3', spec3, 'extendResult', extendResult);
-
-// layout/component/xtype tests
-var mainCmp = Bobomb.create('Bobomb.Components.Component', {
-	id: 'main',
-	style: 'padding: 20px; border: 1px solid black;',
-	cls: '',
-	// defaults apply to any items components defined through xtypes (ones that are not created yet)
-	defaults: {
-		//html: 'aaa'
-	},
-	items: [
-		Bobomb.create('Bobomb.Components.Component', {
-			id: 'third',
-			html: 'asdasdasd',
-			cls: 'test test-test',
-			style: 'color: purple;font-size: 2rem;'
-		}), {
-			id: 'first',
-			html: 'TEST',
-			cls: ['a', 'b', 'c'],
-			style: 'color: red;'
-		}, {
-			id: 'first',
-			html: 'zzz',
-			cls: ['a', 'b', 'c'],
-			style: 'color: red;'
-		}, {
-			id: 'second-container',
-			//html: 'poop', //will not since there is an items property
-			items: [
-				{
-					style: {
-						fontSize: '24px'
-					},
-					html: 'Hello from Bobomb!'
-				}
-			]
-		}, {
-			id: 'sub-main',
-			items: [
-				{
-					id: 'sub-main-child',
-					tagName: 'button',
-					html: 'Hey!',
-					style: {
-						color: 'blue',
-						cursor: 'pointer'
-					},
-					listeners: {
-						click: function(cmp) {
-							cmp.updateStyle({
-								color: 'red',
-								textDecoration: 'underline'
-							});
-							var t = cmp
-								.up('#main')
-								.down('#second-container')
-								.down();
-							if (t) {
-								t.update('Hello from Bobomb again!');
-								t.updateStyle({
-									color: 'purple'
-								});
-							}
-						}
-					}
-				}
-			]
-		}, {
-			tagName: 'button',
-			// put content as textContent instead of html
-			// then demonstrate still having an attribute name
-			// 'text' by putting in attrs object instead
-			// of just dynamically pulling from spec, just in
-			// case some spec."" overlaps a html element
-			// attribute name
-			text: 'Destroy Everything In This Panel!',
-			attrs: {
-				text: 'testing that this in the attributes'	
-			},
-			listeners: {
-				click: function(cmp) {
-					mainCmp.destroy();
-				}
-			}
-		}, {
-			tagName: 'button',
-			html: 'Dynamically Add a Component',
-			listeners: {
-				click: function(cmp) {
-					mainCmp.addComponents({
-						tagName: 'button',
-						html: 'Delete this button!',
-						style: 'font-size: 2rem;display: block;',				
-						listeners: {
-							click: (cmp) => {
-								cmp.destroy();
-							},
-							_destroy: (cmp) => {
-								console.log(`${cmp.getID()} destroyed`)
-							}
-						}
-					});
-				}
-			}
-		}
-	]
-}).renderTo('#test_a');
-
-Bobomb.getComponent('#third').updateStyle({
-	color: '#000'
-});
-
-var evtListenerName = Bobomb.getComponent('#third').addListener('mouseover', (cmp, evt) => {
-	console.log('mouseover on #third', cmp, evt);
-	cmp.removeListener(evtListenerName);
-});
-console.log('evtListenerName', evtListenerName);
-
-var t = Bobomb.create('Bobomb.Components.Component', {
-	id: 'main_b',
-	style: 'margin-top: 20px;padding: 20px; border: 1px solid black;',
-	data: Bobomb.ns('Data').TestStore = {
-		test: 'test'
-	},
-	html: function() {
-		return '<b>test</b>';
-	}
-}).renderTo('#test_b');
-
-console.log(mainCmp.getChildren());
-
-var t = Bobomb.create('Bobomb.Components.Component', {
-	id: 'main_c',
-	style: 'margin-top: 20px;padding: 20px; border: 1px solid black;',
+var dialog = Bobomb.create('Bobomb.Components.Component', {
+	tagName: 'sl-dialog',
+	label: 'Hello!',
 	items: [
 		{
-			tagName: 'button',
-			html: 'Emit the other buttons click event',
+			id: 'label_name',
+			text: 'Hello'
+		}, {
+			tagName: 'sl-button',
+			slot: 'footer',
+			variant: 'primary',
+			text: 'Close',
 			listeners: {
 				click: (cmp) => {
-					Bobomb.getComponent('sub-main-child').emitEvent('click');
+					cmp.up('sl-dialog').getEl().hide();
+				}				
+			}
+		}
+	]
+}).renderTo('body');
+
+//dialog.open();
+
+var t = Bobomb.create('Bobomb.Components.Component', {
+	style: {
+		padding: 100,
+		maxWidth: 800,
+		margin: '0 auto'
+	},
+	defaults: {
+		// merge defaults?
+		style: {
+			paddingTop: 10,
+			paddingBottom: 10
+		}	
+	},
+	items: [
+		{
+			id: 'name_input',
+			tagName: 'sl-input',
+			label: 'Whats your name?'
+		}, {
+			tagName: 'sl-button',
+			text: 'Say Hello!',
+			variant: 'primary',
+			listeners: {
+				click: (cmp) => {
+					var name = Bobomb.getCmp('name_input').getEl().value;
+					dialog.down('#label_name').update(`Hello ${name}`);
+					dialog.getEl().show();
 				}
 			}
 		}
 	]
-}).renderTo('#test_c');
+}).renderTo('main');
+console.log(t.fart)
 </script>
-
-<div id="test_a"></div>
-<div id="test_b"></div>
-<div id="test_c"></div>
 </body>
 </html>
